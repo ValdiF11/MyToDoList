@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from "../components/mainLayout";
 import StickyNote from "../components/stickyNote";
 import Navbar from "../components/navbar"; // Import Navbar component
+import Swal from "sweetalert2";
 
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -26,15 +27,31 @@ const Home = () => {
   }, [user]);
 
   const fetchTasks = async (userId) => {
-    const querySnapshot = await getDocs(collection(db, "tasks"));
-    const userTasks = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id })).filter((task) => task.userId === userId);
-    setTasks(userTasks);
+    try {
+      const querySnapshot = await getDocs(collection(db, "tasks"));
+      const userTasks = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id })).filter((task) => task.userId === userId);
+      setTasks(userTasks);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error fetching tasks data",
+      });
+    }
   };
 
   const fetchUser = async (userId) => {
-    const querySnapshot = await getDocs(collection(db, "users"));
-    const data = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id })).find((user) => user.id === userId);
-    setUserData(data);
+    try {
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const data = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id })).find((user) => user.id === userId);
+      setUserData(data);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error fetching user data",
+      });
+    }
   };
 
   const fetchWeather = async () => {
@@ -42,22 +59,39 @@ const Home = () => {
       const response = await axios.get(`https://api.openweathermap.org/data/2.5/weather?q=Jakarta&appid=${import.meta.env.VITE_API_WEATHER_KEY}`);
       setWeather(response.data);
     } catch (error) {
-      console.error("Error fetching weather data:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error fetching weather data",
+      });
     }
   };
 
   const toggleComplete = async (id, completed) => {
-    const taskDoc = doc(db, "tasks", id);
-    await updateDoc(taskDoc, { completed: !completed });
-    fetchTasks(user.uid);
+    try {
+      const taskDoc = doc(db, "tasks", id);
+      await updateDoc(taskDoc, { completed: !completed });
+      fetchTasks(user.uid);
+    } catch (error) {
+      Swal.fire({ icon: "error", title: "Error", text: "Error updating task" });
+    }
   };
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Logout success",
+      });
       navigate("/login");
     } catch (error) {
-      console.error("Error logging out:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error logging out",
+      });
     }
   };
 
